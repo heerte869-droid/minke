@@ -30,7 +30,7 @@ test('host entry actually imports and registers SDK tool definitions', () => {
   assert.ok(tools.some(tool=>tool.name==='whale_ax_press'));
   assert.ok(tools.some(tool=>tool.name==='whale_follow_video'));
   assert.ok(tools.some(tool=>tool.name==='whale_resume_video'));
-  assert.equal(tools.length, 19); assert.equal(new Set(tools.map(t => t.name)).size, 19);
+  assert.equal(tools.length, 20); assert.equal(new Set(tools.map(t => t.name)).size, 20);
   assert.ok(tools.every(t => t.parameters && typeof t.execute === 'function'));
   const rendered = renderOutput({}, { snapshot: { tree: [] }, imageAttachment: { id: 'attachment-1' } });
   assert.equal(rendered[1].type, 'image'); assert.equal(rendered[0].text.includes('attachment-1'), false);
@@ -39,7 +39,7 @@ test('coordinator construction never starts native before loading the profile in
   const { co, native } = fixture(); assert.equal(co.status().paused, true); assert.equal(native.calls.length, 0);
   await assert.rejects(co.observe({ bundleId: target }, exec()), { code: 'paused' }); assert.equal(native.calls.length, 0);
 });
-const validCursor = () => ({ schema: 1, kind: 'software-overlay', visibility: 'target-window-titlebar', independentNativePointer: false, runtimeValidated: false });
+const validCursor = () => ({ schema: 1, kind: 'software-overlay', visibility: 'target-window', independentNativePointer: false, runtimeValidated: false });
 const reportedCursor = () => ({ ...validCursor(), source: 'helper-self-report' });
 test('native ready cursor is a conservative whitelisted self-report, never raw capabilities', () => {
   const { co, native, config } = fixture();

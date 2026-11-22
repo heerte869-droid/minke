@@ -1,7 +1,7 @@
 {
   "name": "DSH · 浏览器控制",
   "description": "将选中的网页共享给本机 DSH 模型，可以随时断开。",
-  "version": "0.4.8",
+  "version": "0.4.12",
   "manifest_version": 3,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmnHw9tdGM2DzgmPTAN0hXAZssCWfhUi/NitOSKiISphq3sBWnY2j7ah/5hfdgm20bUKyI38LXpd9RbJuMuX6UatWugBS7taM7aYnszsNNSannY+rNOVreEtLezySF0MIyRZWNF+GQWgYp6J4eSgQvusA2RYilqpnsihi6CWa7K2QHHlVvxrb16QcVECa4Vh08Wq+RMrkAz92jB26TQY9l1yRwCbN6mWWr5/Niz7ftvbU1p5owN/nRibJtVFYRjQPtWtyhv84qf4wFcOQGOj6PdrF0mFe6RHoO3hsKD9hpgk2GMs4U3S161Zgr/2i1soofU104Yb9z2qvoPrnJSXWtQIDAQAB",
   "permissions": [
@@ -37,5 +37,8 @@
     "48": "icons/dsh-48.png",
     "128": "icons/dsh-128.png"
   },
-  "minimum_chrome_version": "118"
+  "minimum_chrome_version": "118",
+  "optional_host_permissions": [
+    "https://platform.openai.com/*"
+  ]
 }

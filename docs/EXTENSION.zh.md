@@ -49,3 +49,5 @@ Linux：
 ```sh
 google-chrome --remote-debugging-port=9222 --user-data-dir="$HOME/.config/dsh-chrome"
 ```
+
+对已打开的 OpenAI 账单概览，模型可用 `whale_observe_billing` 检查当前标签状态和页面显示的美元余额。首次在扩展弹窗中按需授予 platform.openai.com 的站点访问权限。读取只针对唯一的官方账单概览；未发现明确余额时返回原因。站点授权可在 Chrome 扩展设置中撤回。

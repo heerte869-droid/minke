@@ -33,7 +33,7 @@ test('render real client with isolated config transport: layout, commands, keybo
     await page.getByText('显示选项', {exact:true}).click();
     const reportedLabel = '支持在目标窗口显示';
     const unknownLabel = '尚未取得组件报告';
-    const cursorReport = { schema: 1, kind: 'software-overlay', visibility: 'target-window-titlebar', independentNativePointer: false, runtimeValidated: false, source: 'helper-self-report' };
+    const cursorReport = { schema: 1, kind: 'software-overlay', visibility: 'target-window', independentNativePointer: false, runtimeValidated: false, source: 'helper-self-report' };
     const fixtureStatus = { paused: true, nativeConnected: true, permissions: null, browserConnections: 0 };
     const cursorChecks = [];
     const narrowCursorChecks = [];
@@ -76,7 +76,7 @@ test('render real client with isolated config transport: layout, commands, keybo
       cursorChecks.push(label);
     }
     await checkCursor('connected + exact candidate self-report', { ...fixtureStatus, cursor: cursorReport }, true);
-    assert.equal(await page.locator('#wc-overlay option[value="companion"]').textContent(), '跟随控件 · 窗口状态');
+    assert.equal(await page.locator('#wc-overlay option[value="companion"]').textContent(), '跟随操作目标');
     assert.equal(await page.locator('.wc-hero .wc-cursor').count(), 0, 'No whale branding in the header');
     await page.screenshot({ path: '.test-artifacts/ui/cursor-reported-mock.png', fullPage: true, animations: 'disabled' });
     await checkNarrowCursorLayout('candidate self-report');

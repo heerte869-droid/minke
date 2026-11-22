@@ -6,7 +6,7 @@ import { NativeClient } from '../lib/native-client.js';
 
 class FakeChild extends EventEmitter {
   stdout = new PassThrough(); stderr = new PassThrough(); exitCode = null; frames = []; kills = [];
-  constructor({ reply = true, version = '0.4.1' } = {}) {
+  constructor({ reply = true, version = '0.4.10' } = {}) {
     super(); this.reply = reply;
     this.stdin = new Writable({ write: (chunk, _encoding, done) => {
       const request = JSON.parse(chunk.toString()); this.frames.push(request); done();

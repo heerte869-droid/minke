@@ -144,7 +144,7 @@ window.__ModuleLoader__.load({
       const cursor = status.cursor;
       const variant = value.cursorVariant === 'mini' ? 'mini' : 'large';
       const cursorReported = status.nativeConnected === true && cursor !== null && typeof cursor === 'object' && !Array.isArray(cursor)
-        && cursor.schema === 1 && cursor.kind === 'software-overlay' && cursor.visibility === 'target-window-titlebar'
+        && cursor.schema === 1 && cursor.kind === 'software-overlay' && cursor.visibility === 'target-window'
         && cursor.independentNativePointer === false && cursor.runtimeValidated === false && cursor.source === 'helper-self-report';
       const [feedbackArea,setFeedbackArea] = React.useState('control');
       const [fieldError,setFieldError] = React.useState({});
@@ -321,7 +321,7 @@ window.__ModuleLoader__.load({
             h('div', { className: 'wc-row' }, h('label', { htmlFor:'wc-overlay' }, '显示方式'),
               h('select', { id:'wc-overlay', value:value.overlayMode ?? 'companion', disabled:locked,
                 onChange:e=>save([{op:'set',path:['overlayMode'],value:e.target.value}],undefined,'cursor') },
-                h('option',{value:'clean'},'整洁 · 动作后收起'),h('option',{value:'companion'},'跟随控件 · 窗口状态'),h('option',{value:'hidden'},'隐藏'))),
+                h('option',{value:'clean'},'动作后收起'),h('option',{value:'companion'},'跟随操作目标'),h('option',{value:'hidden'},'隐藏'))),
             (value.overlayMode ?? 'companion') === 'clean' && h('div', { className:'wc-row' }, h('label',{htmlFor:'wc-hold'},'收起延迟（毫秒）'),
               h('input',{id:'wc-hold',type:'number',min:300,max:5000,step:1,value:cursorHold,disabled:locked,'aria-invalid':Boolean(fieldError.hold),
                 'aria-describedby':fieldError.hold?'wc-hold-error':undefined, onChange:e=>{setCursorHold(e.target.value);setFieldError(old=>({...old,hold:''}));},

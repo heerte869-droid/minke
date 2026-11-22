@@ -21,7 +21,7 @@ class FakeChild extends EventEmitter {
     } });
     if (autoReady) queueMicrotask(() => this.ready());
   }
-  ready() { this.stdout.write(JSON.stringify({ event: 'ready', data: { protocol: 1, version: '0.4.1' } }) + '\n'); }
+  ready() { this.stdout.write(JSON.stringify({ event: 'ready', data: { protocol: 1, version: '0.4.10' } }) + '\n'); }
   kill(signal) { this.kills.push(signal); this.exitCode = 0; queueMicrotask(() => this.emit('exit', 0)); return true; }
 }
 function fixture({ checkExecutable, autoReady = true } = {}) {

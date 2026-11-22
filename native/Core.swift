@@ -331,7 +331,6 @@ final class NativeEngine: @unchecked Sendable {
     let cache=SnapshotStore()
     let privateInput=SkyLightBridge()
     var overlay: WhaleOverlay?
-    var badge: WhaleActivityBadge?
     var eventMonitor: WhaleEvents?
     var rawFocus: AXUIElement?
     private var lastTrees: [String:[[String:Any]]]=[:]
@@ -347,8 +346,7 @@ final class NativeEngine: @unchecked Sendable {
     }
     func status() -> [String:Any] {
         let display: [String:Any] = Thread.isMainThread ? (overlay?.diagnostics ?? [:]) : DispatchQueue.main.sync {overlay?.diagnostics ?? [:]}
-        let activity:[String:Any] = Thread.isMainThread ? (badge?.diagnostics ?? [:]) : DispatchQueue.main.sync {badge?.diagnostics ?? [:]}
-        return ["activity":activity,"protocol":1,"version":"0.4.1","permissions":permissions(),"paused":state.paused,"generation":state.generation,
+        return ["protocol":1,"version":"0.4.10","permissions":permissions(),"paused":state.paused,"generation":state.generation,
          "privateInput":privateInput.info(),"overlayDiagnostics":display,
          "cursor":CursorCapability.descriptor,
          "capabilities":["accessibility":true,"windowCapture":true,"ocr":true,"unicode":true,"overlay":true,"foregroundInput":true,"strictBackground":"AX-first; optional PID/window SkyLight","privateSkyLight":privateInput.available,"recordReplay":false,"remoteControl":false],

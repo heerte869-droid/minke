@@ -30,8 +30,8 @@ AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 1.0)
 application.setActivationPolicy(.accessory)
 let engine=NativeEngine()
 let work=DispatchQueue(label:"local.whale-computer.native.serial",qos:.userInitiated)
-engine.overlay=WhaleOverlay();engine.badge=WhaleActivityBadge()
-engine.pausedNotification={emit(["event":"paused","data":["paused":true,"generation":engine.state.generation,"reason":"human_input_or_native_safety_stop"]]);DispatchQueue.main.async{engine.overlay?.paused();engine.badge?.clear()}}
+engine.overlay=WhaleOverlay()
+engine.pausedNotification={emit(["event":"paused","data":["paused":true,"generation":engine.state.generation,"reason":"human_input_or_native_safety_stop"]]);DispatchQueue.main.async{engine.overlay?.paused()}}
 // Environment changes invalidate old work immediately. Only a new request can
 // start a new generation, after the system confirms the current console session.
 final class SessionAvailability: @unchecked Sendable {
@@ -61,7 +61,7 @@ func watchSession(_ center:NotificationCenter,_ off:Notification.Name,_ on:Notif
         _=sessionAvailability.change(name,blocked:true)
         engine.state.pause();engine.state.releaseOwnInputs()
         emit(["event":"paused","data":["paused":true,"reason":"session_or_sleep"]])
-        DispatchQueue.main.async{engine.overlay?.hide();engine.badge?.clear()}
+        DispatchQueue.main.async{engine.overlay?.hide()}
     })
     observers.append(center.addObserver(forName:on,object:nil,queue:nil){ _ in
         if sessionAvailability.change(name,blocked:false) && sessionAvailability.available() {
@@ -82,30 +82,23 @@ func process(_ request:[String:Any]) {
     if seenIDs.count>4096 {seenIDs=[id]};seenLock.unlock()
     guard fresh else {failure(id,NativeError("duplicate_id","Duplicate request id rejected"));return}
     if method=="pause" {
-        let changed=engine.state.pause(userStop:params["manualStop"] as? Bool == true);engine.state.releaseOwnInputs();DispatchQueue.main.async {engine.overlay?.paused();engine.badge?.clear()}
+        let changed=engine.state.pause(userStop:params["manualStop"] as? Bool == true);engine.state.releaseOwnInputs();DispatchQueue.main.async {engine.overlay?.paused()}
         _=changed // Command pause replies only; spontaneous pauses alone emit notifications.
         emit(["id":id,"result":["paused":true,"generation":engine.state.generation]]);return
     }
     if method=="shutdown" {
         engine.state.pause();engine.state.releaseOwnInputs();emit(["id":id,"result":["shutdown":true]])
-        DispatchQueue.main.async {engine.overlay?.hide();engine.badge?.clear();NSApplication.shared.terminate(nil)};return
+        DispatchQueue.main.async {engine.overlay?.hide();NSApplication.shared.terminate(nil)};return
     }
     let admittedGeneration=engine.state.generation
     work.async {
         let dispatchAtStart=engine.state.dispatchCount
         do {
             var result:[String:Any]
-            let badgeKinds = ["apps.list":"read","apps.find":"read","windows.list":"read","observe":"read","app.open":"act","action":"act"]
-            var badgeToken:String?
-            if let kind=badgeKinds[method] {
+            if ["apps.list","apps.find","windows.list","observe","app.open","action"].contains(method) {
                 try engine.state.check(admittedGeneration)
-                let bundle=params["bundleId"] as? String
-                if let bundle {try safeBundle(bundle)}
-                let name=bundle.flatMap {NSRunningApplication.runningApplications(withBundleIdentifier:$0).first?.localizedName} ?? bundle ?? "应用列表"
-                let token=UUID().uuidString;badgeToken=token
-                DispatchQueue.main.sync {if (try? engine.state.check(admittedGeneration)) != nil {engine.badge?.begin(token,kind,name,anchor:ActivityAnchor.app(bundle,(params["windowId"] as? NSNumber)?.uint32Value))}}
+                if let bundle=params["bundleId"] as? String {try safeBundle(bundle)}
             }
-            defer {if let token=badgeToken {DispatchQueue.main.async { engine.badge?.finish(token) }}}
             switch method {
             case "status":result=engine.status()
             case "apps.list":result=engine.apps()
@@ -156,30 +149,15 @@ func process(_ request:[String:Any]) {
                 try engine.state.check(admittedGeneration)
                 result=DispatchQueue.main.sync {backgroundPlaybackLayout()}
                 try engine.state.check(admittedGeneration)
-            case "activity.task", "activity.taskEnd":
-                let token=try str(params,"id",max:64)
-                if method=="activity.task" {try DispatchQueue.main.sync {try engine.state.check(admittedGeneration);engine.badge?.startTask(token)}}
-                else {DispatchQueue.main.sync {engine.badge?.stopTask(token)}}
-                result=["accepted":true]
-            case "activity.begin":
-                try engine.state.check(admittedGeneration)
-                let token=try str(params,"id",max:64),kind=try str(params,"kind",max:8),target=try str(params,"target",max:180)
-                guard ["act","read"].contains(kind) else {throw NativeError("invalid_params","Unknown activity")}
-                try DispatchQueue.main.sync {try engine.state.check(admittedGeneration);engine.badge?.begin(token,kind,target,anchor:ActivityAnchor.browser(params["browserWindow"] as? [String:Any]))}
-                result=["accepted":true]
-            case "activity.end":
-                let token=try str(params,"id",max:64)
-                DispatchQueue.main.sync {engine.badge?.finish(token)};result=["accepted":true]
             case "overlay.artwork":
                 let key=try str(params,"variant",max:12)
-                try DispatchQueue.main.sync { try engine.overlay?.changeArtwork(key);engine.badge?.artwork(key) }
+                try DispatchQueue.main.sync { try engine.overlay?.changeArtwork(key) }
                 result=["variant":key]
             case "overlay.configure":
                 try engine.state.checkGeneration(admittedGeneration)
                 result=try DispatchQueue.main.sync {
                     try engine.state.checkGeneration(admittedGeneration)
                     let configured=try engine.overlay?.configure(params) ?? [:]
-                    engine.badge?.enabled=configured["mode"] as? String != "hidden";engine.badge?.artwork(configured["variant"] as? String ?? "large")
                     try engine.state.checkGeneration(admittedGeneration)
                     return configured
                 }
@@ -233,7 +211,7 @@ DispatchQueue.global(qos:.userInitiated).async {
         }
     } catch {failure("",NativeError("input_failure","Native input stream closed unexpectedly"))}
     engine.state.pause();engine.state.releaseOwnInputs()
-    DispatchQueue.main.async {engine.overlay?.hide();engine.badge?.clear();NSApplication.shared.terminate(nil)}
+    DispatchQueue.main.async {engine.overlay?.hide();NSApplication.shared.terminate(nil)}
 }
 emit(["event":"ready","data":engine.status()])
 application.run()

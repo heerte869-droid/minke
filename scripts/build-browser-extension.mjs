@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-const files=['manifest.json','worker.js','task-tabs.js','playback-presentation.js','page.js','cursor-layer.js','popup.html','popup.js','popup.css',
+const files=['manifest.json','worker.js','billing-observation.js','task-tabs.js','playback-presentation.js','page.js','cursor-layer.js','popup.html','popup.js','popup.css',
   'cursor-large.png','cursor-mini.png','README.txt',...['16','32','48','128'].map(size=>'icons/dsh-'+size+'.png')];
 const temp=await mkdtemp(path.join(root,'assets/.zip-'));
 try {

@@ -45,8 +45,8 @@ await writeFile(path.join(contents,'Info.plist'),`<?xml version="1.0" encoding="
 <key>CFBundleDisplayName</key><string>Computer Use Helper</string>
 <key>CFBundleExecutable</key><string>whale-helper</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.4.1</string>
-<key>CFBundleVersion</key><string>3</string>
+<key>CFBundleShortVersionString</key><string>0.4.10</string>
+<key>CFBundleVersion</key><string>4</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>LSUIElement</key><true/>
 <key>NSHighResolutionCapable</key><true/>

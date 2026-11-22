@@ -5,7 +5,7 @@ import QuartzCore
 // Shared by real status/ready and the pre-NSApplication pure self-test branch.
 enum CursorCapability {
     static var descriptor:[String:Any] {
-        ["schema":1,"kind":"software-overlay","visibility":"target-window-titlebar",
+        ["schema":1,"kind":"software-overlay","visibility":"target-window",
          "independentNativePointer":false,"runtimeValidated":false]
     }
 }
@@ -742,145 +742,6 @@ private final class CursorPanel:NSPanel {
     override var canBecomeMain:Bool {false}
 }
 
-// A click-through accessory beside the *target window's* traffic lights.
-// Only geometry and the target's own AX window controls are inspected.
-struct ActivityAnchor {
-    let pid:pid_t
-    let started:ProcessStartIdentity
-    let requestedID:CGWindowID?
-    let hint:CGRect?
-    static func app(_ bundle:String?,_ id:CGWindowID?) -> ActivityAnchor? {
-        guard let bundle else {return nil}
-        let app:NSRunningApplication?
-        if let id {
-            app=applicationOwningWindow(id,bundle:bundle)
-        } else {
-            app=NSRunningApplication.runningApplications(withBundleIdentifier:bundle).first
-        }
-        guard let app,!app.isTerminated,let start=processStartIdentity(for:app) else {return nil}
-        return ActivityAnchor(pid:app.processIdentifier,started:start,requestedID:id,hint:nil)
-    }
-    static func browser(_ raw:[String:Any]?) -> ActivityAnchor? {
-        guard let raw,let parent=raw["pid"] as? Int, parent>0,parent<=Int(Int32.max),
-              let x=raw["x"] as? Double,let y=raw["y"] as? Double,let w=raw["w"] as? Double,let h=raw["h"] as? Double else {return nil}
-        let rect=CGRect(x:x,y:y,width:w,height:h)
-        guard CursorDisplayLayout.finiteRectangle(rect),w>100,h>40,w<32768,h<32768 else{return nil}
-        var pid=pid_t(parent)
-        let browsers=["com.google.chrome","com.google.chrome.for.testing","org.chromium.chromium","com.google.chrome.beta","com.google.chrome.dev","com.google.chrome.canary","com.microsoft.edgemac","com.brave.browser"]
-        for _ in 0..<7 {
-            if let app=NSRunningApplication(processIdentifier:pid), !app.isTerminated,
-               let bundle=app.bundleIdentifier?.lowercased(),browsers.contains(bundle),let start=processStartIdentity(for:app){
-                return ActivityAnchor(pid:pid,started:start,requestedID:nil,hint:rect)
-            }
-            var info=proc_bsdinfo()
-            let used=proc_pidinfo(pid,PROC_PIDTBSDINFO,0,&info,Int32(MemoryLayout<proc_bsdinfo>.size))
-            guard used==Int32(MemoryLayout<proc_bsdinfo>.size),info.pbi_ppid>1,info.pbi_ppid<=UInt32(Int32.max) else {break}
-            pid=pid_t(info.pbi_ppid)
-        }
-        return nil
-    }
-}
-final class WhaleActivityBadge {
-    private let size=NSSize(width:112,height:22)
-    private let panel=CursorPanel(contentRect:NSRect(x:0,y:0,width:112,height:22),styleMask:[.borderless,.nonactivatingPanel],backing:.buffered,defer:false)
-    private let label=NSTextField(labelWithString:""),icon=NSImageView()
-    private var owner:String?,task:String?,kind="",target="",placement=""
-    private var anchor:ActivityAnchor?,windowID:CGWindowID?,windowAX:AXUIElement?
-    private var relativeCenter:CGPoint?,measuredSize:CGSize?,previousFrame:CGRect?
-    private var settleWork:DispatchWorkItem?,dismissWork:DispatchWorkItem?,timer:Timer?
-    var enabled=true {didSet{if !enabled{clear()}}}
-    init(){
-        panel.level=NSWindow.Level(rawValue:NSWindow.Level.floating.rawValue+1)
-        panel.isOpaque=false;panel.backgroundColor = .clear;panel.hasShadow=false
-        panel.ignoresMouseEvents=true;panel.hidesOnDeactivate=false;panel.animationBehavior = .none
-        panel.collectionBehavior=[.fullScreenAuxiliary,.transient,.ignoresCycle];panel.isExcludedFromWindowsMenu=true
-        let view=NSView(frame:NSRect(origin:.zero,size:size));view.wantsLayer=true
-        view.layer?.backgroundColor=NSColor(srgbRed:0.36,green:0.19,blue:0.57,alpha:0.97).cgColor
-        view.layer?.cornerRadius=10
-        icon.frame=NSRect(x:4,y:1,width:20,height:20);icon.imageScaling = .scaleProportionallyUpOrDown
-        label.frame=NSRect(x:27,y:3,width:82,height:16);label.font = .systemFont(ofSize:10.5,weight:.semibold)
-        label.textColor = .white;label.lineBreakMode = .byClipping
-        view.addSubview(icon);view.addSubview(label);panel.contentView=view;artwork("large")
-    }
-    func artwork(_ v:String){if let u=Bundle.main.url(forResource:v=="mini" ? "cursor-whale":"cursor-whale-large",withExtension:"png"){icon.image=NSImage(contentsOf:u)}}
-    private func targetRow(_ rows:[[String:Any]],_ a:ActivityAnchor)->(CGWindowID,CGRect)?{
-        let candidates=rows.compactMap{r->(CGWindowID,CGRect)? in
-            guard (r[kCGWindowOwnerPID as String] as? Int)==Int(a.pid),(r[kCGWindowLayer as String] as? Int)==0,
-                  let id=r[kCGWindowNumber as String] as? UInt32,(r[kCGWindowAlpha as String] as? Double ?? 0)>0,
-                  let b=r[kCGWindowBounds as String] as? NSDictionary,let f=CGRect(dictionaryRepresentation:b as CFDictionary),CursorVisibility.valid(f) else{return nil}
-            return(id,f)
-        }
-        if let id=windowID ?? a.requestedID {return candidates.first{$0.0==id}}
-        if let f=a.hint {
-            let hits=candidates.filter{abs($0.1.minX-f.minX)<=2 && abs($0.1.minY-f.minY)<=2 && abs($0.1.width-f.width)<=2 && abs($0.1.height-f.height)<=2}
-            return hits.count==1 ? hits[0] : nil
-        }
-        if candidates.count==1{return candidates[0]}
-        let root=AXUIElementCreateApplication(a.pid);AXUIElementSetMessagingTimeout(root,0.08)
-        guard let win=ax(root,kAXFocusedWindowAttribute),CFGetTypeID(win)==AXUIElementGetTypeID(),let f=axFrame(win as! AXUIElement) else{return nil}
-        let hits=candidates.filter{CursorVisibility.matching($0.1,f)};return hits.count==1 ? hits[0]:nil
-    }
-    private func findControls(_ a:ActivityAnchor,_ f:CGRect) {
-        relativeCenter=nil;windowAX=nil;placement=""
-        let root=AXUIElementCreateApplication(a.pid);AXUIElementSetMessagingTimeout(root,0.08)
-        guard let wins=ax(root,kAXWindowsAttribute) as? [AXUIElement] else{return}
-        let hits=wins.prefix(64).filter{if let b=axFrame($0){return CursorVisibility.matching(b,f)};return false}
-        guard hits.count==1 else{return};let win=hits[0];windowAX=win
-        var controls:[CGRect]=[]
-        for names in [[kAXCloseButtonAttribute],[kAXMinimizeButtonAttribute],[kAXZoomButtonAttribute,"AXFullScreenButton"]] {
-            if let val=names.lazy.compactMap({ax(win,$0)}).first,CFGetTypeID(val)==AXUIElementGetTypeID(),let b=axFrame(val as! AXUIElement),
-               b.minX>=f.minX,b.midX<f.minX+145,b.midY>=f.minY,b.midY<f.minY+60 {controls.append(b)}
-        }
-        guard controls.count==3,let right=controls.max(by:{$0.maxX<$1.maxX}) else{return}
-        relativeCenter=CGPoint(x:right.maxX+8-f.minX,y:right.midY-f.minY);placement="traffic-lights"
-    }
-    private func visible(_ rows:[CursorWindowGeometry],_ frame:CGRect,_ rect:CGRect,_ a:ActivityAnchor,_ screens:[CGRect])->Bool{
-        let ours=ProcessInfo.processInfo.processIdentifier
-        for w in rows.dropLast() where w.pid != ours && w.alpha>0 && w.frame.intersects(rect) {
-            if CursorVisibility.desktopSurface(w,screens:screens) {
-                let sys=AXUIElementCreateSystemWide();var hit:AXUIElement?,pid:pid_t=0
-                if AXUIElementCopyElementAtPosition(sys,Float(rect.midX),Float(rect.midY),&hit) == .success,let hit,
-                   AXUIElementGetPid(hit,&pid) == .success,pid==a.pid,let win=windowAX,
-                   CFEqual(hit,win) || ax(hit,kAXWindowAttribute).map({CFEqual($0,win)})==true {continue}
-            }
-            return false
-        }
-        return frame.contains(rect)
-    }
-    private func refresh(){
-        guard enabled,owner != nil,let a=anchor,let app=NSRunningApplication(processIdentifier:a.pid),!app.isHidden,!app.isTerminated,
-              processStartIdentity(for:app)==a.started,
-              let raw=CGWindowListCopyWindowInfo([.optionOnScreenOnly,.excludeDesktopElements],kCGNullWindowID) as? [[String:Any]],
-              let (id,f)=targetRow(raw,a),let rows=CursorWindowMetadata.decode(raw,until:id),rows.last?.pid==a.pid,
-              let layout=CursorDisplayLayout(cocoaScreenFrames:NSScreen.screens.map{$0.frame}) else {panel.orderOut(nil);return}
-        windowID=id
-        if measuredSize != f.size || relativeCenter==nil {findControls(a,f);measuredSize=f.size}
-        // A borderless/fullscreen surface with no real traffic lights must not acquire a fake title bar.
-        guard let relative=relativeCenter else {panel.orderOut(nil);return}
-        let rect=CGRect(x:f.minX+relative.x,y:f.minY+relative.y-size.height/2,width:size.width,height:size.height)
-        guard visible(rows,f,rect,a,layout.cgScreenFrames),let origin=layout.cocoaOrigin(forCGPanel:rect) else{panel.orderOut(nil);return}
-        previousFrame=rect;if panel.frame.origin != origin {panel.setFrameOrigin(origin)}
-        if !panel.isVisible {panel.orderFrontRegardless()}
-    }
-    func begin(_ id:String,_ action:String,_ name:String,anchor next:ActivityAnchor?){
-        settleWork?.cancel();dismissWork?.cancel();owner=id;kind=action;target=name
-        anchor=next;windowID=next?.requestedID;relativeCenter=nil;measuredSize=nil
-        label.stringValue=action=="read" ? "DSH 正在浏览":"DSH 正在操作";refresh()
-        if next != nil && timer==nil {let t=Timer(timeInterval:0.14,repeats:true){[weak self]_ in self?.refresh()};timer=t;RunLoop.main.add(t,forMode:.common)}
-    }
-    func startTask(_ id:String){task=id}
-    func stopTask(_ id:String){if task==id{clear()}}
-    func finish(_ id:String){
-        guard enabled,owner==id else{return};settleWork?.cancel();dismissWork?.cancel()
-        let settle=DispatchWorkItem{[weak self] in guard let self,self.owner==id else{return};self.label.stringValue=self.task != nil ? "DSH 等待下一步":(self.kind=="read" ? "DSH 刚刚浏览":"DSH 刚刚操作")}
-        settleWork=settle;DispatchQueue.main.asyncAfter(deadline:.now()+0.8,execute:settle)
-        let dismiss=DispatchWorkItem{[weak self] in guard let self,self.owner==id else{return};self.clear()}
-        dismissWork=dismiss;DispatchQueue.main.asyncAfter(deadline:.now()+(task==nil ? 12:120),execute:dismiss)
-    }
-    func clear(){settleWork?.cancel();dismissWork?.cancel();timer?.invalidate();timer=nil;owner=nil;task=nil;anchor=nil;windowID=nil;windowAX=nil;relativeCenter=nil;previousFrame=nil;panel.orderOut(nil)}
-    var diagnostics:[String:Any]{["visible":panel.isVisible,"label":label.stringValue,"target":target,"placement":placement,"windowID":Int(windowID ?? 0),"frame":previousFrame.map(rectJSON) ?? [:]]}
-}
-
 final class WhaleOverlay {
     private let panel:CursorPanel
     private let whale=WhaleView(frame:NSRect(x:0,y:0,width:28,height:28))
@@ -1066,7 +927,7 @@ final class WhaleOverlay {
         whale.phase=state;whale.needsDisplay=true;refresh()
     }
     func browserActivity(check:() throws -> Void) throws {
-        try check();hide() // Window-local status is provided by the activity badge.
+        try check();hide()
     }
     func preview(check:() throws -> Void) throws {
         try check()

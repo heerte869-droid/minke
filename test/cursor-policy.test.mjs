@@ -53,7 +53,7 @@ test('isolated candidate runs only explicit pure cursor-policy self-tests',{skip
   assert.equal(result.passed,32+result.axIdentityAssertions+result.inputInterruptionAssertions+result.cursorAdmissionAssertions+result.cursorPolicyAssertions+result.cursorLifecycleAssertions+result.cursorCompletionAssertions+result.cursorRefreshAssertions+result.cursorConfigurationAssertions+result.cursorLayoutAssertions+result.cursorMetadataAssertions,'Report each assertion group once');
   assert.equal(result.guiActions,0);
   assert.equal(result.permissionPrompts,0);
-  assert.deepEqual(result.cursor,{schema:1,kind:'software-overlay',visibility:'target-window-titlebar',independentNativePointer:false,runtimeValidated:false},'Self-description is shared with status; it must not attest live cursor behavior');
+  assert.deepEqual(result.cursor,{schema:1,kind:'software-overlay',visibility:'target-window',independentNativePointer:false,runtimeValidated:false},'Self-description is shared with status; it must not attest live cursor behavior');
   // Feed real pre-AppKit output through an in-memory ready event, never NativeClient.
   const native=new EventEmitter();native.connected=true;
   const coordinator=new Coordinator({native,getConfig:()=>({enabled:false})});

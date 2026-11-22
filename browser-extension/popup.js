@@ -8,6 +8,7 @@ function setText(node, value) {
 }
 
 function render(state) {
+  byId('billing').hidden=!state.billingAccessRequested;
   const shared = state.connected || state.connecting;
   const focused = document.activeElement;
   document.body.dataset.on = String(state.connected);
@@ -85,6 +86,13 @@ async function act(op) {
   }
 }
 
+byId('billing').onclick=async()=>{
+  try{
+    const granted=await chrome.permissions.request({origins:['https://platform.openai.com/*']});
+    feedback.dataset.kind='action';feedback.textContent=granted?'已授权，可在 DSH 中读取。':'未获得账单站点权限。';
+  }catch{feedback.dataset.kind='action';feedback.textContent='授权未完成，请重试。';}
+  await refresh();
+};
 here.onclick = () => act('connect');
 view.onclick = () => act('view');
 stop.onclick = () => act('stop');

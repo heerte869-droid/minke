@@ -26,7 +26,7 @@ test('real Cordis lifecycle mounts tools/settings and holds the sole provider un
   assert.ok(tools.some(tool=>tool.name==='whale_ax_press'));
   assert.ok(tools.some(tool=>tool.name==='whale_follow_video'));
   assert.ok(tools.some(tool=>tool.name==='whale_resume_video'));
-  assert.equal(tools.length, 19);
+  assert.equal(tools.length, 20);
   assert.equal(skills.length,1);
   const match=skills[0].content.match(/await import\(("file:[^"]+")\)/);
   assert.ok(match,'Skill supplies the exact installed API URL');

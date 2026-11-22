@@ -1,3 +1,5 @@
+import {billingAccess,observeBilling} from './billing-observation.js';
+let billingAccessRequested=false;
 import {groupNewTab,releaseGroups} from './task-tabs.js';
 import {operate} from './page.js';
 import {endPresentation,preparePresentation,presentationState} from './playback-presentation.js';
@@ -348,6 +350,7 @@ async function popupStatus() {
   const showTitle=usable && (!owner || allowed(tab.url));
   const recent=activity && Date.now()-activity.at<3600;
   return {
+    billingAccessRequested:billingAccessRequested && !await chrome.permissions.contains(billingAccess),
     generation:epoch, id:tab?.id ?? null, connected, connecting:Boolean(owner&&!connected),
     shareable:Boolean(usable), here:Boolean(connected&&current?.id===owner?.id),
     site:showTitle ? url.hostname : '', title:showTitle ? tab.title?.slice(0,240) || '' : '',
@@ -443,15 +446,18 @@ function listenForTasks(){
   port.onMessage.addListener(async msg=>{
     if(taskPort!==port)return;
     if(msg.type==='waiting'||msg.type==='clear'||(msg.type==='cancel'&&launchJob?.id===msg.id)){cancelLaunch();return}
+    const billing=msg.op==='observeBilling';
     const manager=msg.op==='openExtensionsManager';
-    if(msg.type!=='request'||(!manager && (msg.op!=='openTask'||msg.args?.site!=='bilibili')))return;
+    if(msg.type!=='request'||(!billing && !manager && (msg.op!=='openTask'||msg.args?.site!=='bilibili')))return;
     if(launchJob || !Number.isFinite(msg.deadline)||Date.now()>=msg.deadline){
       port.postMessage({type:'reply',id:msg.id,error:'任务已过期或正在打开',notDispatched:true});return;
     }
     const job={id:msg.id,deadline:msg.deadline,cancelled:false,tabId:null,taskTitle:msg.args.taskTitle};launchJob=job;
     try {
       let result;
-      if(manager){
+      if(billing){
+        result=await observeBilling(()=>requireLaunch(job));billingAccessRequested=result.state==='needs_site_access';
+      }else if(manager){
         const win=await chrome.windows.getLastFocused({windowTypes:['normal']});
         requireLaunch(job);
         if(!win?.id || win.incognito)throw Error('没有可用的普通 Chrome 窗口');

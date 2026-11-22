@@ -25,7 +25,7 @@ test('native pure self tests do not query or operate desktop',{skip:nativeSkip},
 });
 test('native protocol startup/status/pause/invalid requests without TCC prompts',{skip:nativeSkip},async t=>{
   const client=launch();t.after(()=>client.close());
-  const ready=await client.wait(x=>x.event==='ready');assert.equal(ready.data.protocol,1);assert.equal(ready.data.version,'0.4.1');
+  const ready=await client.wait(x=>x.event==='ready');assert.equal(ready.data.protocol,1);assert.equal(ready.data.version,'0.4.10');
   const status=await client.call('status');assert.equal(status.result.protocol,1);assert.equal(typeof status.result.permissions.accessibility,'boolean');assert.equal(typeof status.result.capabilities.privateSkyLight,'boolean');assert.equal(status.result.privateInput.enabled,false);assert.equal(status.result.paused,true);
   const userOnly=await client.call('permissions.request',{kind:'accessibility'});assert.equal(userOnly.error.code,'user_required');
   const inputDenied=await client.call('input.configure',{privateSkyLight:true});assert.equal(inputDenied.error.code,'user_required');

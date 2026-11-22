@@ -6,7 +6,7 @@ All source in this project is ESM JavaScript (Node >=22.19) except the Swift hel
 
 Helper executable at `native/build/Whale Computer.app/Contents/MacOS/whale-helper`, used directly from the plugin by default. An explicit helperPath can select a separate matching installation.
 
-Each request and response is one bounded JSON line. stdout = protocol only, stderr = diagnostics (no content). AppKit runloop remains responsive while stdin read runs separately. v1 requests `{id:string,method:string,params:object}`; response `{id,result}` or `{id,error:{code,message,details?}}`. Notifications `{event:'paused'|'sessionAvailable'|'status',data:object}`. First notification `{event:'ready',data:{protocol:1,version:'0.4.1',...}}`. Max line 2MB; screenshots returned via base64 PNG only on explicit request, bounded dimensions/bytes (no arbitrary output paths).
+Each request and response is one bounded JSON line. stdout = protocol only, stderr = diagnostics (no content). AppKit runloop remains responsive while stdin read runs separately. v1 requests `{id:string,method:string,params:object}`; response `{id,result}` or `{id,error:{code,message,details?}}`. Notifications `{event:'paused'|'sessionAvailable'|'status',data:object}`. First notification `{event:'ready',data:{protocol:1,version:'0.4.10',...}}`. Max line 2MB; screenshots returned via base64 PNG only on explicit request, bounded dimensions/bytes (no arbitrary output paths).
 
 Methods:
 - `status {}` => `{protocol,version,permissions:{accessibility,screenCapture,inputMonitoring?},paused,capabilities,...}`. No permission prompts.

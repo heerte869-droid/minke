@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-whale-computer",
-  "version": "0.4.9",
+  "version": "0.4.12",
   "private": true,
   "description": "Computer Use: native macOS and browser control for DSH, with explicit consent, verified observations and an optional decorated AI cursor.",
   "type": "module",
