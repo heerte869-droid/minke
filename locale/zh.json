@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Computer Use · 电脑控制",
+    "description": "macOS 与浏览器操作，支持独立位置光标、目标观察和操作后验证。",
+    "detail": "docs/PLUGIN.zh.md"
+  }
+}

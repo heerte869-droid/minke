@@ -1,0 +1,42 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createServer} from 'node:http';
+import {build} from 'esbuild';
+import {chromium} from 'playwright-core';
+test('real client: stale save/command results cannot overwrite a newer emergency stop', {timeout:30000}, async()=>{
+ const client=await readFile('client.js','utf8');
+ const harness=["import React from 'react';import{createRoot}from'react-dom/client';let plugin;window.__ModuleLoader__={load(entry){plugin=entry.factory(()=>React)}};",client,"let state={status:'ready',writable:true,revision:1,value:{enabled:true,cursorSize:28,response:JSON.stringify({boot:'test-boot',status:{paused:false}})}};\nconst listeners=new Set(),history=[],held=[];let holdSave=false,holdCommand=false;\nfunction emit(){for(const fn of listeners)fn()}\nconst form={subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn)},getSnapshot:()=>state,async mutate(ops,revision){\n if(revision!==state.revision)return false;\n history.push(ops);const value={...state.value};for(const op of ops)value[op.path[0]]=op.value;\n state={...state,value,revision:state.revision+1};emit();\n const command=ops.find(x=>x.path[0]==='command');const defer=command?holdCommand:holdSave;\n if(command)holdCommand=false;else holdSave=false;\n if(defer)return new Promise((resolve,reject)=>held.push({resolve,reject}));\n return true;\n}};\nfunction useSnapshot(selector){return selector(React.useSyncExternalStore(form.subscribe,form.getSnapshot,form.getSnapshot))}\nconst root=createRoot(document.getElementById('app'));\nconst ctx={effect:fn=>fn(),configForms:{get:()=>form,whileServed:(_,fn)=>fn()},slots:{inject:(_,fn)=>fn(),register:(_,Component)=>root.render(React.createElement(React.StrictMode,null,React.createElement(Component,{form,useSnapshot})))}};\nplugin.apply(ctx);\nwindow.harness={history,holdSave(){holdSave=true},holdCommand(){holdCommand=true},settle(ok=true){const p=held.shift();if(!p)throw Error('nothing held');ok?p.resolve(true):p.reject(Error('late failure'))},ack(op){\nconst commands=history.flatMap(ops=>ops.filter(x=>x.path[0]==='command').map(x=>JSON.parse(x.value)));\nconst c=commands.findLast(c=>c.op===op);\nstate={...state,revision:state.revision+1,value:{...state.value,response:JSON.stringify({boot:'test-boot',ackNonce:c.nonce,outcome:'completed',status:{paused:op==='pause'}})}};emit();\n}};"].join('\n');
+ const compiled=await build({stdin:{contents:harness,resolveDir:process.cwd(),loader:'js'},bundle:true,write:false,format:'iife',platform:'browser',define:{'process.env.NODE_ENV':'"development"'}});
+ const server=createServer((req,res)=>{res.setHeader('content-type',req.url==='/main.js'?'text/javascript':'text/html');res.end(req.url==='/main.js'?compiled.outputFiles[0].text:'<!doctype html><meta charset="utf-8"><div id="app"></div><script src="/main.js"></script>')});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
+ try{
+  browser=await chromium.launch({executablePath:(process.env.WHALE_TEST_CHROMIUM || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),headless:true});
+  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:'+server.address().port);
+  const stop=page.getByRole('button',{name:'停止操作',exact:true}),diagnose=page.getByRole('button',{name:'检查权限',exact:true});
+  await page.getByText('控制与安全',{exact:true}).click();
+  await page.evaluate(()=>window.harness.holdSave());
+  await page.getByLabel('允许屏幕捕获与 OCR',{exact:false}).check();
+  await stop.click();await page.evaluate(()=>window.harness.settle());
+  assert.equal(await diagnose.isDisabled(),true,'late save completion cannot unlock a pending stop');
+  assert.match(await page.locator('.wc-feedback').innerText(),/正在等待/);
+  await page.evaluate(()=>window.harness.ack('pause'));
+  await page.getByText('已暂停并清除授权',{exact:true}).waitFor();
+  assert.equal(await diagnose.isDisabled(),false);
+  await page.getByRole('button',{name:'恢复操作',exact:true}).click();await page.evaluate(()=>window.harness.ack('resume'));
+  await stop.waitFor();
+  await page.evaluate(()=>window.harness.holdCommand());await diagnose.click();await stop.click();
+  await page.evaluate(()=>window.harness.settle(false));
+  assert.equal(await diagnose.isDisabled(),true,'late command rejection cannot cancel a pending stop');
+  assert.match(await page.locator('.wc-feedback').innerText(),/正在等待/);
+  await page.evaluate(()=>window.harness.ack('pause'));
+  await page.getByText('已暂停并清除授权',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'恢复操作',exact:true}).click();
+  await page.evaluate(()=>window.harness.ack('resume'));
+  const before=await page.evaluate(()=>window.harness.history.length);
+  await stop.evaluate(el=>{el.click();el.click()});
+  assert.equal(await page.evaluate(()=>window.harness.history.length),before+1,'same-tick stop clicks submit only once');
+  assert.deepEqual(errors,[]);
+ } finally{await browser?.close();await new Promise(r=>server.close(r))}
+});

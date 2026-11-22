@@ -1,0 +1,46 @@
+name: macOS checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - run: npm install --global pnpm@10.24.0 --ignore-scripts
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm run build:client
+      - run: pnpm run build:native
+      - run: pnpm run check
+      - run: pnpm exec playwright-core install chromium
+      - name: Run offline tests
+        run: |
+          export WHALE_TEST_CHROMIUM="$(node --input-type=module -e "import { chromium } from 'playwright-core'; console.log(chromium.executablePath())")"
+          pnpm test
+      - run: pnpm pack
+      - run: node scripts/check-release.mjs local-dsh-whale-computer-*.tgz
+
+  browser-adapter:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm install --global pnpm@10.24.0 --ignore-scripts
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec playwright-core install chromium
+      - name: Browser adapter and control lifecycle
+        shell: bash
+        run: |
+          export WHALE_TEST_CHROMIUM="$(node --input-type=module -e "import { chromium } from 'playwright-core'; console.log(chromium.executablePath())")"
+          node --test test/browser-only.test.mjs test/browser.test.mjs

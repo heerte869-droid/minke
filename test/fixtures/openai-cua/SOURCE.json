@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/openai/openai-cua-sample-app",
+  "commit": "6dd34b40acc1d002696ccd41aaf0a1f2f2be290c",
+  "license": "MIT",
+  "usage": "Unmodified static test labs; no model calls."
+}

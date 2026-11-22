@@ -1,0 +1,128 @@
+{
+  "name": "@local/dsh-whale-computer",
+  "version": "0.4.9",
+  "private": true,
+  "description": "Computer Use: native macOS and browser control for DSH, with explicit consent, verified observations and an optional decorated AI cursor.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.bundle.js",
+    "./icon": "./assets/whale.svg",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./api": "./lib/api.js",
+    "./locale/*.json": "./locale/*.json",
+    "./typert": "./lib/display-remote.js",
+    "./remote": "./lib/display-remote.js"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib",
+    "assets",
+    "skills",
+    "cordis.patch.yml",
+    "native/build/Whale Computer.app",
+    "native/THIRD_PARTY_NOTICES.md",
+    "docs",
+    "scripts/setup.mjs",
+    "README.md",
+    "PROTOCOL.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "locale",
+    "CURRENT.md",
+    "client.bundle.js",
+    "browser-extension",
+    "scripts/browser-host.mjs",
+    "scripts/setup-browser.mjs"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml",
+      "platforms": [
+        "darwin",
+        "win32",
+        "linux"
+      ]
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-settings-general",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-api-gateway"
+      ]
+    },
+    "compatibility": {
+      "dsh": "0.2.2-rc.3 || 0.2.2-rc.5",
+      "profiles": [
+        "web",
+        "desktop",
+        "headless"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:security": "node --test test/security.test.mjs",
+    "test:browser": "node --test test/browser.test.mjs",
+    "test:native": "node --test test/native.test.mjs",
+    "test:native-gate": "node --test test/native-opt-in.test.mjs",
+    "build:native": "node scripts/build-native.mjs",
+    "check": "node scripts/check.mjs",
+    "setup": "node scripts/setup.mjs",
+    "build:client": "node scripts/build-client.mjs",
+    "build:extension": "node scripts/build-browser-extension.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.64.1",
+    "zod": "4.6.6"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@deepseek-ai/dsh-attachment": "0.2.2-rc.3 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.2-rc.3 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.2-rc.3 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-skill": "0.2.2-rc.3 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.3 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-user-approval": "0.2.2-rc.3 || 0.2.2-rc.5",
+    "@deepseek-ai/schemastery": "~3.19.0",
+    "@deepseek-ai/dsh-computer-use": "0.2.2-rc.3 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-user-questions": "0.2.2-rc.3 || 0.2.2-rc.5",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.3 || 0.2.2-rc.5"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-client-ui-renderer": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-client-ui-settings": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@deepseek-ai/dsh-tool-executor-native": "0.2.2-rc.3"
+  },
+  "icon": "./assets/whale.svg",
+  "packageManager": "pnpm@10.24.0",
+  "publishConfig": {
+    "executableFiles": [
+      "native/build/Whale Computer.app/Contents/MacOS/whale-helper"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heerte869-droid/dsh-whale-computer-use.git"
+  },
+  "homepage": "https://github.com/heerte869-droid/dsh-whale-computer-use"
+}

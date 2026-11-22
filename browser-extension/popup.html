@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="color-scheme" content="light dark">
+  <title>DSH 浏览器控制</title><link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header><img src="icons/dsh-48.png" alt="" width="28" height="28"><h1>DSH 浏览器控制</h1><span id="state" role="status">连接中</span></header>
+  <main>
+    <div class="tab"><div id="context">当前标签页</div><h2 id="title">正在读取标签页…</h2><div id="site"></div></div>
+    <div class="buttons">
+      <button id="here" class="primary" disabled>共享当前页</button>
+      <button id="view" class="primary" hidden>查看任务页</button>
+      <button id="stop" class="stop" hidden>停止共享</button>
+    </div>
+    <output role="status"></output>
+  </main><script src="popup.js"></script>
+</body></html>
