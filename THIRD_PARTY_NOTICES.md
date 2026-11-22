@@ -69,3 +69,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Minke README media
+
+The project mascot logo was generated for Minke. The main recording shows the DSH tools operating the macOS Calculator and this project’s public GitHub release in Chrome. The additional form recording uses the local Northstar Stays booking lab credited above. The setup image is a capture of the running DSH plugin installer. Product names and application interfaces belong to their respective owners.

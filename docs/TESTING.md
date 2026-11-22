@@ -16,3 +16,17 @@ WHALE_TEST_VIDEO=/path/to/local-film.mp4 WHALE_FORM_ARTIFACTS=/path/to/results n
 首次使用回归覆盖空配置、手动停止跨重启、会话唤醒、缺少浏览器扩展时的工具回执，以及安装包中原生组件的执行权限。离线视频验收同时记录 DSH 工具入口的延迟。
 
 0.4.0 已在 Apple Silicon macOS、DSH 0.2.2-rc.3 / rc.5 的测试环境构建和回归。此前双扩展的日常桌面采样记录不计入此单扩展版的验收。
+
+<a id="build"></a>
+## 在 macOS 从源码构建
+
+需要 Node.js 22.19+、pnpm 10.24.0 和 Xcode Command Line Tools。在仓库根目录执行：
+
+```sh
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm run build:client
+pnpm run build:native
+pnpm run check
+pnpm test
+pnpm pack
+```
