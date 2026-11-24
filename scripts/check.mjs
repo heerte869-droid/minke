@@ -21,7 +21,16 @@ for (const path of await walk(root)) {
   catch (error) { failures.push(`Syntax failed: ${path}: ${error.stderr?.toString().slice(0, 1000)}`); }
 }
 const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-if (manifest.dsh.compatibility.dsh !== '0.2.2-rc.3 || 0.2.2-rc.5') failures.push('Runtime versions must match the tested DSH releases.');
+const tested = new Set(JSON.parse(await readFile(join(root, 'scripts/tested-dsh-versions.json'), 'utf8')));
+const range = manifest.dsh.compatibility.dsh;
+for (const version of range.split('||').map(value => value.trim())) {
+  if (!tested.has(version)) failures.push('DSH release missing from acceptance matrix: ' + version);
+}
+for (const [name, peerRange] of Object.entries(manifest.peerDependencies)) {
+  if (name.startsWith('@deepseek-ai/dsh-') && peerRange !== range) failures.push(name + ' must declare the host range.');
+}
+const extension = JSON.parse(await readFile(join(root, 'browser-extension/manifest.json'), 'utf8'));
+if (extension.version !== manifest.version) failures.push('Release manifest versions must match.');
 if (manifest.files.some(f => f.includes('research') || f.includes('node_modules') || f.includes('.test-artifacts'))) failures.push('Research SDKs, dependencies and private test evidence must not be packaged.');
 for (const notice of ['LICENSE', 'THIRD_PARTY_NOTICES.md', 'native/THIRD_PARTY_NOTICES.md', 'docs']) {
   if (!manifest.files.includes(notice)) failures.push(`Package must include licenses and referenced documentation: ${notice}`);

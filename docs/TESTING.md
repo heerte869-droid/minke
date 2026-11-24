@@ -1,5 +1,7 @@
 # 验收方式
 
+发布前，将 TGZ 通过支持的 DSH 版本分别安装到临时配置，验证插件能够载入。已验收的精确版本记录在 `scripts/tested-dsh-versions.json`，`pnpm run check` 校验安装包声明和 DSH peer 的范围。网页光标按 128 CSS px × 3 准备栅格图，改美术后需复测热点与浅色、深色背景。
+
 `pnpm test` 运行测试目录中的 Node 测试；macOS GUI、权限提示等需要显式选择的原生场景会显示为跳过。可用 `WHALE_TEST_CHROMIUM` 指定测试浏览器的可执行文件。仓库 CI 采用 macOS 环境，执行构建、静态检查和默认测试。
 
 ## Chrome 真机引擎测试

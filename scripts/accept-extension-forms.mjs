@@ -145,6 +145,14 @@ try{
     const events=await worker.evaluate(()=>globalThis.activationEvents);
     assert.ok(!events.includes(Number(task.tabId)));
     report.taskTabActivations=events.filter(id=>id===Number(task.tabId)).length;
+    // Exercise the shared port directly: normal model tools are serialized by the coordinator.
+    await page.evaluate(()=>document.body.append(document.createElement('video')));
+    const meta=await bridge.request('meta');
+    const reads=Promise.all(Array.from({length:3},()=>bridge.request('verifyPlayback',{tabId:meta.tabId,url:meta.url})));
+    await assert.rejects(bridge.request('meta'),{code:'extension_busy',details:{notDispatched:true}});
+    await reads;
+    assert.equal((await bridge.request('meta')).tabId,meta.tabId);
+    await page.evaluate(()=>document.querySelector('video:last-child')?.remove());
     await page.evaluate(()=>{window.checkboxClicks=0;document.querySelector('input[type=checkbox]').addEventListener('click',()=>window.checkboxClicks++)});
     await action('setChecked','Breakfast included',{checked:true});
     assert.equal(await page.evaluate(()=>window.checkboxClicks),0);

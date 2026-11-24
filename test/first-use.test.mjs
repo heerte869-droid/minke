@@ -1,3 +1,4 @@
+import manifest from '../package.json' with { type: 'json' };
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
@@ -73,7 +74,7 @@ test('setup prepares the bundled unpacked files, including first Chrome launch a
   const profileDir=await temp(t),chromeDir=path.join(profileDir,'Chrome');let opens=0;
   await assert.rejects(prepareChromeInstall({profileDir,chromeDir,openManager:async()=>{throw Error('missing Chrome')}}),{code:'chrome_not_initialized'});
   const r=await prepareChromeInstall({profileDir,chromeDir,openManager:async()=>{opens++}});
-  assert.equal(r.managerOpened,true);assert.equal(opens,1);assert.equal(JSON.parse(await fs.readFile(path.join(r.directory,'manifest.json'))).version,'0.4.13');
+  assert.equal(r.managerOpened,true);assert.equal(opens,1);assert.equal(JSON.parse(await fs.readFile(path.join(r.directory,'manifest.json'))).version,manifest.version);
   const again=await prepareChromeInstall({profileDir,chromeDir,openManager:async()=>{throw Error('unavailable')}});
   assert.equal(again.managerOpened,false);assert.equal(again.directory,r.directory);
 });

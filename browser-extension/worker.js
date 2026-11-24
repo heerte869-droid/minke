@@ -290,7 +290,12 @@ async function connectTab(tab,restore=false,members=[{id:tab.id}],groupTitle=nul
       if(msg.type==='unavailable'){clearTimeout(timer);disconnect();reject(Error(msg.error));return}
       if(msg.type==='clear'){endPresentation();pending.clear();clearPage(target);activity=null;return}
        if(msg.type==='cancel'){endPresentation();pending.delete(msg.id);clearPage(target,msg.id);return}
-      if(msg.type!=='request'||pending.size>2)return;pending.add(msg.id);
+      if(msg.type!=='request'||pending.has(msg.id))return;
+      if(pending.size>=3){
+        port.postMessage({type:'reply',id:msg.id,code:'extension_busy',error:'扩展正在处理其他请求，本次操作尚未执行。',notDispatched:true});
+        return;
+      }
+      pending.add(msg.id);
       try{const result=await execute(msg,port);if(link===port&&pending.has(msg.id))port.postMessage({type:'reply',id:msg.id,result})}
       catch(e){if(link===port&&pending.has(msg.id))port.postMessage({type:'reply',id:msg.id,error:String(e.message).slice(0,260),notDispatched:e.notDispatched===true})}
       finally{pending.delete(msg.id);if(activity?.id===msg.id){activity={...activity,at:Date.now(),label:activity.label==='正在操作'?'刚刚操作':'刚刚浏览'}}}

@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-whale-computer",
-  "version": "0.4.13",
+  "version": "0.4.15",
   "private": true,
   "description": "Computer Use: native macOS and browser control for DSH, with explicit consent, verified observations and an optional decorated AI cursor.",
   "type": "module",
@@ -62,7 +62,7 @@
       ]
     },
     "compatibility": {
-      "dsh": "0.2.2-rc.3 || 0.2.2-rc.5",
+      "dsh": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
       "profiles": [
         "web",
         "desktop",
@@ -87,17 +87,17 @@
     "zod": "4.6.6"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "~4.1.0",
-    "@deepseek-ai/dsh-attachment": "0.2.2-rc.3 || 0.2.2-rc.5",
-    "@deepseek-ai/dsh-client-ui-renderer": "0.2.2-rc.3 || 0.2.2-rc.5",
-    "@deepseek-ai/dsh-client-ui-settings": "0.2.2-rc.3 || 0.2.2-rc.5",
-    "@deepseek-ai/dsh-skill": "0.2.2-rc.3 || 0.2.2-rc.5",
-    "@deepseek-ai/dsh-tools": "0.2.2-rc.3 || 0.2.2-rc.5",
-    "@deepseek-ai/dsh-user-approval": "0.2.2-rc.3 || 0.2.2-rc.5",
-    "@deepseek-ai/schemastery": "~3.19.0",
-    "@deepseek-ai/dsh-computer-use": "0.2.2-rc.3 || 0.2.2-rc.5",
-    "@deepseek-ai/dsh-user-questions": "0.2.2-rc.3 || 0.2.2-rc.5",
-    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.3 || 0.2.2-rc.5"
+    "@deepseek-ai/cordis": "~4.1.0 || 4.2.0-alpha.1",
+    "@deepseek-ai/dsh-attachment": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
+    "@deepseek-ai/dsh-skill": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
+    "@deepseek-ai/dsh-user-approval": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
+    "@deepseek-ai/schemastery": "~3.19.0 || 3.20.0-alpha.1",
+    "@deepseek-ai/dsh-computer-use": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
+    "@deepseek-ai/dsh-user-questions": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.3 || 0.2.2-rc.5 || 0.2.3-alpha.2"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-client-ui-renderer": {
