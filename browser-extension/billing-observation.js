@@ -28,6 +28,8 @@ export function readOverview(expected){
     return node.getClientRects().length>0;
   };
   const amount=/^(?:USD\s*|US\$\s*|\$\s*)(-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,6})?)$/;
+  const isApiTitle=text=>/^(api\s+credits?\s+balance|api\s*信用(?:余额|餘額))$/i.test(canonical(text));
+  const apiNodes = new Set();
   const flags={loginControl:false,billingHeading:false,accessError:false,loading:false,moneyText:false,hasPageText:false,
     payAsYouGo:false,trialHeading:false,verificationPage:false,embeddedFrame:[...document.querySelectorAll('iframe')].some(el=>visible(el,false))};
   const labelsSeen=new Set(), values=[], inspected=new Set();
@@ -47,6 +49,16 @@ export function readOverview(expected){
     if(/^(loading[. …]*|加载中[. …]*|正在加载[. …]*)$/.test(word))flags.loading=true;
     if(/verify (?:that )?you are human|checking your browser|验证您是人类|验证您是否是真人|正在验证您的浏览器/.test(word))flags.verificationPage=true;
     if(!visible(el))continue;
+    if (/api|信用|credit|balance|余额|餘額/i.test(token)) {
+      for (let node=el; node && node!==document.body; node=node.parentElement) {
+        const title=node.innerText?.trim() || '';
+        if (title.length>32 || node.closest('table,nav,[role=table],[role=navigation]')) break;
+        if (isApiTitle(title)) {
+          if (![...node.children].some(child=>visible(child) && isApiTitle(child.innerText || ''))) apiNodes.add(node);
+          break;
+        }
+      }
+    }
     if(amount.test(token))flags.moneyText=true;
     let labelNode=el, label=word;
     if(!labels.has(label)){
@@ -80,8 +92,26 @@ export function readOverview(expected){
       if(match){values.push({label:[...accepted,...remaining].find(v=>canonical(v)===label),amount:match[1].replaceAll(',',''),currency:'USD'});break;}
     }
   }
-  const explicitWallet=values.length===1 && ['wallet balance','钱包余额','錢包餘額'].includes(canonical(values[0].label));
-  const trialOnly=!explicitWallet && flags.trialHeading;
+  if (apiNodes.size) {
+    const label='API credit balance';
+    const base={pageReady:document.readyState,visibility:document.visibilityState,labels:[label,...labelsSeen],billingTerms:[...related],pageSignals:flags};
+    if (apiNodes.size!==1) return {...base,state:'ambiguous_balance'};
+    for (let node=[...apiNodes][0]; node.parentElement && isApiTitle(node.innerText); node=node.parentElement) {
+      const group=node.parentElement;
+      if (group.matches('html,body,main,[role=main]')) break;
+      if (isApiTitle(group.innerText || '')) continue;
+      const fields=[...group.children].filter(child=>visible(child,false));
+      if (fields.length===1) continue;
+      const value=fields[1];
+      if (fields[0]!==node || !value || !visible(value) || [...value.querySelectorAll(control)].some(c=>visible(c,false))) break;
+      const text=value.innerText.normalize('NFKC').replace(/\s+/g,' ').trim();
+      const match=amount.exec(text) || /^(-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,6})?)\s*(?:美元|美金|USD)$/i.exec(text);
+      if(match)return {...base,state:'read',label,amount:match[1].replaceAll(',',''),currency:'USD'};
+      break;
+    }
+    return {...base,state:'amount_not_ready'};
+  }
+  const trialOnly=flags.trialHeading;
   const state=values.length===1 && labelsSeen.size===1?(trialOnly?'trial_credit_only':'read'):labelsSeen.size>1 || values.length>1?'ambiguous_balance':
     labelsSeen.size?'amount_not_ready':flags.verificationPage?'verification_page':flags.accessError?'page_error':flags.loginControl&&!flags.billingHeading?'login_prompt':
     !flags.hasPageText?'empty_document':flags.loading?'loading':'label_not_found';

@@ -23,11 +23,16 @@ test('billing reads only an adjacent labeled amount from a rendered document',as
     assert.equal(r.state,'read');assert.ok(!JSON.stringify(r).includes('private'));assert.equal(r.currency,'USD');
   }
   const wallet=await read('<h2>Free trial</h2><section><h3>Wallet balance</h3><div>$0.00<button>View usage</button></div></section>');
-  const described=await read('<section><h3>Wallet balance</h3><p>Funds in your organization credit wallet.</p><strong>$1.23</strong></section><aside>Free trial</aside>');
+  const described=await read('<section><h3>Wallet balance</h3><p>Funds in your organization credit wallet.</p><strong>$1.23</strong></section>');
   assert.equal(described.state,'read');assert.equal(described.amount,'1.23');
   const unrelated=await read('<section><h3>Wallet balance</h3><p>Your organization spending limit</p><strong>$900</strong></section>');
   assert.notEqual(unrelated.state,'read');
-  assert.equal(wallet.state,'read');assert.equal(wallet.amount,'0.00');
+  assert.notEqual(wallet.state,'read');
+  const credit=val=>'<h3>免费试用</h3><div><span><span><font><font>API信用余额</font></font></span><svg width="12" height="12"></svg></span>'+val+'<p>下一笔预计限额：US$98.00</p></div><section><h3>钱包余额</h3><p>$0.00</p></section>';
+  const selected=await read(credit('<div><div>37.41 美元</div></div>'));
+  assert.equal(selected.state,'read');assert.equal(selected.label,'API credit balance');assert.equal(selected.amount,'37.41');
+  for(const val of ['<div>Loading</div>','<button>$37.41</button>','<div>37.41 元</div>'])
+    assert.equal((await read(credit(val))).state,'amount_not_ready');
   assert.equal((await read('<h2>Free trial</h2><section><p>Credit remaining</p><p>$5</p></section>')).state,'trial_credit_only');
   assert.notEqual((await read('<p>Credit balance</p><button>Pay $10</button>')).state,'read');
   assert.notEqual((await read('<p>Credit balance</p><p>Current usage $10</p>')).state,'read');
